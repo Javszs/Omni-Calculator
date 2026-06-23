@@ -10,20 +10,19 @@ interface BasicCalculatorProps {
 export default function BasicCalculator({ onHistoryAdd }: BasicCalculatorProps) {
   const [display, setDisplay] = useState('0');
   const [expression, setExpression] = useState('');
+  const [lastResult, setLastResult] = useState<string | null>(null);
 
-  // Check if last character is an operator
-  const isLastCharOperator = (str: string) => {
-    return /[+\-*/]$/.test(str);
-  };
+  const isLastCharOperator = (str: string) => /[+\-*/]$/.test(str);
 
   const handleButton = (value: string) => {
     if (value === 'C') {
       setDisplay('0');
       setExpression('');
+      setLastResult(null);
       return;
     }
 
-    if (value === '⌫') { // Backspace
+    if (value === '⌫') {
       if (expression.length <= 1) {
         setExpression('');
         setDisplay('0');
@@ -37,12 +36,13 @@ export default function BasicCalculator({ onHistoryAdd }: BasicCalculatorProps) 
 
     if (value === '=') {
       if (!expression) return;
-      
+
       const calcResult = calculateExpression(expression);
       const finalResult = calcResult.error ? 'Error' : calcResult.result.toString();
-      
+
       setDisplay(finalResult);
-      setExpression('');
+      setExpression(finalResult);        // ← Keep result for chaining
+      setLastResult(finalResult);
 
       if (!calcResult.error) {
         onHistoryAdd({ 
@@ -54,9 +54,14 @@ export default function BasicCalculator({ onHistoryAdd }: BasicCalculatorProps) 
       return;
     }
 
-    // Handle operator input with validation
+    // Operator handling
     if (['+', '-', '*', '/'].includes(value)) {
-      const currentExpr = expression || display;
+      let currentExpr = expression || display;
+
+      // If we have a previous result and no current expression, start new with result
+      if (lastResult && !expression) {
+        currentExpr = lastResult;
+      }
 
       if (currentExpr === '0' && value === '-') {
         setExpression('-');
@@ -65,7 +70,6 @@ export default function BasicCalculator({ onHistoryAdd }: BasicCalculatorProps) 
       }
 
       if (isLastCharOperator(currentExpr)) {
-        // Replace last operator with new one (except for minus after operator for negative)
         if (value === '-' && !currentExpr.endsWith('-')) {
           setExpression(currentExpr + value);
           setDisplay(currentExpr + value);
@@ -81,16 +85,18 @@ export default function BasicCalculator({ onHistoryAdd }: BasicCalculatorProps) 
       return;
     }
 
-    // Handle numbers and decimal
+    // Decimal handling
     if (value === '.') {
       const current = expression || display;
       const lastNumber = current.split(/[+\-*/]/).pop() || '';
-      if (lastNumber.includes('.')) return; // Prevent multiple decimals
+      if (lastNumber.includes('.')) return;
     }
 
-    const newExpr = expression + value;
+    // Number input
+    const newExpr = (expression || display) + value;
     setExpression(newExpr);
     setDisplay(newExpr);
+    setLastResult(null);
   };
 
   return (
@@ -101,13 +107,11 @@ export default function BasicCalculator({ onHistoryAdd }: BasicCalculatorProps) 
       </div>
 
       <div className="grid grid-cols-4 gap-3 text-2xl">
-        {/* First Row */}
         <button onClick={() => handleButton('C')} className="bg-red-500/80 hover:bg-red-600 py-6 rounded-2xl active:scale-95 transition font-medium">C</button>
         <button onClick={() => handleButton('(')} className="bg-gray-700 hover:bg-gray-600 py-6 rounded-2xl active:scale-95 transition">(</button>
         <button onClick={() => handleButton(')')} className="bg-gray-700 hover:bg-gray-600 py-6 rounded-2xl active:scale-95 transition">)</button>
         <button onClick={() => handleButton('⌫')} className="bg-gray-700 hover:bg-gray-600 py-6 rounded-2xl active:scale-95 transition font-medium text-xl">⌫</button>
 
-        {/* Numbers & Operators */}
         {[7,8,9,'/'].map(v => (
           <button key={v} onClick={() => handleButton(v.toString())} className="bg-gray-800 hover:bg-gray-700 py-6 rounded-2xl active:scale-95 transition">{v}</button>
         ))}
@@ -122,7 +126,7 @@ export default function BasicCalculator({ onHistoryAdd }: BasicCalculatorProps) 
             key={v} 
             onClick={() => handleButton(v.toString())}
             className={`py-6 rounded-2xl active:scale-95 transition font-medium 
-              ${v === '=' ? 'bg-blue-600 col-span-1' : v === '0' ? 'col-span-2' : 'bg-gray-800 hover:bg-gray-700'}`}
+              ${v === '=' ? 'bg-blue-600' : v === '0' ? 'col-span-2' : 'bg-gray-800 hover:bg-gray-700'}`}
           >
             {v}
           </button>
