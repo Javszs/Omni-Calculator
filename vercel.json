@@ -1,5 +1,4 @@
 {
-  "rootDirectory": "apps/web",
   "buildCommand": "npm run build --workspace=web",
   "installCommand": "npm install",
   "framework": "nextjs"
