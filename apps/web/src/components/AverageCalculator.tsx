@@ -64,8 +64,6 @@ export default function AverageCalculator({ onHistoryAdd, onResultChange }: Aver
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Average Calculator</h2>
-
       <div className="flex gap-3">
         <input
           type="number"

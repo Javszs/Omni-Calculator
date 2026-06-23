@@ -63,8 +63,6 @@ export default function UnitConverter({ onHistoryAdd, onResultChange }: UnitConv
 
   return (
     <div className="space-y-8">
-      <h2 className="text-2xl font-semibold">Unit Converter</h2>
-
       <div>
         <label className="block text-sm mb-2 text-gray-400">Category</label>
         <select 
