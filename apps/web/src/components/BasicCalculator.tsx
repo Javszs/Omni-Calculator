@@ -36,66 +36,73 @@ export default function BasicCalculator({ onHistoryAdd }: BasicCalculatorProps) 
 
     if (value === '=') {
       if (!expression) return;
-
       const calcResult = calculateExpression(expression);
       const finalResult = calcResult.error ? 'Error' : calcResult.result.toString();
 
       setDisplay(finalResult);
-      setExpression(finalResult);        // ← Keep result for chaining
+      setExpression(finalResult);
       setLastResult(finalResult);
 
       if (!calcResult.error) {
-        onHistoryAdd({ 
-          type: 'calc', 
-          expr: expression, 
-          result: finalResult 
-        });
+        onHistoryAdd({ type: 'calc', expr: expression, result: finalResult });
       }
       return;
     }
 
     // Operator handling
     if (['+', '-', '*', '/'].includes(value)) {
-      let currentExpr = expression || display;
+      let current = expression || display;
 
-      // If we have a previous result and no current expression, start new with result
       if (lastResult && !expression) {
-        currentExpr = lastResult;
+        current = lastResult;
       }
 
-      if (currentExpr === '0' && value === '-') {
+      if (current === '0' && value === '-') {
         setExpression('-');
         setDisplay('-');
         return;
       }
 
-      if (isLastCharOperator(currentExpr)) {
-        if (value === '-' && !currentExpr.endsWith('-')) {
-          setExpression(currentExpr + value);
-          setDisplay(currentExpr + value);
-        } else {
-          const newExpr = currentExpr.slice(0, -1) + value;
-          setExpression(newExpr);
-          setDisplay(newExpr);
-        }
+      if (isLastCharOperator(current)) {
+        const newExpr = current.slice(0, -1) + value;
+        setExpression(newExpr);
+        setDisplay(newExpr);
       } else {
-        setExpression(currentExpr + value);
-        setDisplay(currentExpr + value);
+        setExpression(current + value);
+        setDisplay(current + value);
       }
       return;
     }
 
-    // Decimal handling
+    // Number / Decimal handling
+    let newDisplay = display;
+    let newExpression = expression;
+
     if (value === '.') {
-      const current = expression || display;
-      const lastNumber = current.split(/[+\-*/]/).pop() || '';
-      if (lastNumber.includes('.')) return;
+      const currentStr = expression || display;
+      const lastPart = currentStr.split(/[+\-*/]/).pop() || '';
+      if (lastPart.includes('.')) return; // prevent multiple decimals
     }
 
-    // Number input
-    const newExpr = (expression || display) + value;
-    setExpression(newExpr);
-    setDisplay(newExpr);
+    // Prevent leading zeros
+    if (value >= '0' && value <= '9') {
+      const currentStr = expression || display;
+
+      if (currentStr === '0' || currentStr === '-0') {
+        newDisplay = value;
+        newExpression = value;
+      } else {
+        newDisplay = currentStr + value;
+        newExpression = currentStr + value;
+      }
+    } else {
+      // For other inputs like decimal
+      newDisplay = (expression || display) + value;
+      newExpression = (expression || display) + value;
+    }
+
+    setDisplay(newDisplay);
+    setExpression(newExpression);
     setLastResult(null);
   };
 
